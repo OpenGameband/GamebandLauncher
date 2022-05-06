@@ -2,7 +2,21 @@ $GB_files_URL = "https://files.valtek.uk/Gameband-Files/gameband_sw.zip"
 $GB_launcher_URL = "https://files.valtek.uk/Gameband-Files/GamebandLauncher.exe"
 $JAVA_DOWNLOAD_URL = "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u322-b06/OpenJDK8U-jre_x86-32_windows_hotspot_8u322b06.zip"
 
-$files_to_hide = @(".lib","._.VolumeIcon.icns", "Gameband.app", "Gameband_linux.bat", ".java")
+$GB_EXE_hash = "E2D62CEF222A6B35FC71EB87972752D324E51C6C3C451069FD8473C50728AAED"
+
+$Linux_launch_script = @"
+#!/bin/bash
+if which java
+then
+
+else
+    ./.javalin/
+fi
+
+
+"@
+
+$files_to_hide = @(".lib","._.VolumeIcon.icns", "Gameband.app", "Gameband_linux.bat", ".javawin")
 Add-Type -AssemblyName PresentationCore,PresentationFramework
 Add-Type -AssemblyName System.IO;
 if (-Not (Test-Path -Path "$PWD\.lib")) {
@@ -11,9 +25,11 @@ if (-Not (Test-Path -Path "$PWD\.lib")) {
     Expand-Archive "$PWD\gameband_sw.zip" -DestinationPath $PWD
     Remove-Item "$PWD\gameband_sw.zip"
     Remove-Item -LiteralPath "$PWD\Gameband.app" -Force -Recurse
-    Remove-Item -LiteralPath "$PWD\Gameband.exe" -Force
-    Invoke-WebRequest -Uri "$GB_launcher_URL" -OutFile "$PWD\Gameband.exe"
+}
 
+if ((Get-FileHash "$PWD\Gameband.exe").Hash -eq $GB_EXE_hash) {
+     Remove-Item -LiteralPath "$PWD\Gameband.exe" -Force
+     Invoke-WebRequest -Uri "$GB_launcher_URL" -OutFile "$PWD\Gameband.exe"
 }
 
 if (-Not (Test-Path -Path "$PWD\.javawin")) {
@@ -24,6 +40,7 @@ if (-Not (Test-Path -Path "$PWD\.javawin")) {
 
 }
 foreach ($file in $files_to_hide) {
-    (get-item $file).Attributes += 'Hidden'
+    $fileobj = Get-Item $file -Force
+    $fileobj.Attributes += 'Hidden'
 }
 Pause
